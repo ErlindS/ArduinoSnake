@@ -17,11 +17,15 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_RST);
 //Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 float p = 3.1415926;
 int SensorWert = 0;
-int x[100];
-int y[100];
-
 //int x = 10;
 //int y = 10;
+
+struct Snake{
+  int x;
+  int y;
+};
+
+struct Snake S[100];
 void setup(void) {
   Serial.begin(9600);
   Serial.print("Hello! ST7735 TFT Test");
@@ -34,7 +38,7 @@ void setup(void) {
   Serial.println("Initialized");
   uint16_t time = millis();
   tft.fillScreen(ST7735_BLACK);
-  time = millis() - time;
+  //time = millis() - time;
   Serial.println(time, DEC);
   delay(500);
   // large block of text
@@ -43,8 +47,17 @@ void setup(void) {
   testdrawtext("The best console you will ever see", ST7735_WHITE);
   delay(500);
   tft.fillScreen(ST7735_WHITE);
-  x[1] = 10;
-  y[1] = 10;
+
+  int Snakelength = 3;
+
+  S[0].x = 0;
+  S[0].y = 0;
+
+  S[1].x = -10;
+  S[1].y = 0;
+
+  S[2].x = -20;
+  S[2].y = 0;
 }
 
 void loop() {
@@ -52,37 +65,48 @@ void loop() {
   //delay(500);
   //tft.invertDisplay(false);
   //delay(500);
-  //recttangle();
   SensorWert = analogRead(A0);
   if (SensorWert > 1000)  // Wenn der Wert größer als 1010 ist, dann...
         {
-              deleterecttangle();
-              x[0] += 20;
-              recttangle();
+              for(int i = 0; i < 3; i++){
+                  deleterecttangle(S[i]);
+                  S[i+1] = S[i];
+                  S[i].x += 10;
+                  recttangle(S[i]);
+              }
               delay(50);
         }
     
   if (SensorWert < 100) // Wenn der Wert kleiner als 1010 ist, dann...
         { 
-              deleterecttangle();
-              x[0] -=20;
-              recttangle();
+          for(int i = 0; i < 3; i++){
+                  deleterecttangle(S[i]);
+                  S[i].x -= 10;
+                  recttangle(S[i]);
+                  //S[i+1] = S[i];
+              }
               delay(50);
         }
   SensorWert = analogRead(A1);
   if (SensorWert > 1000)  // Wenn der Wert größer als 1010 ist, dann...
         {
-              deleterecttangle();
-              y[0] -=20;
-              recttangle();
+           for(int i = 0; i < 3; i++){
+                  deleterecttangle(S[i]);
+                  S[i].y -= 10;
+                  recttangle(S[i]);
+                  //S[i+1] = S[i];
+              }
               delay(50);
         }
     
   if (SensorWert < 100) // Wenn der Wert kleiner als 1010 ist, dann...
         { 
-              deleterecttangle();
-              y[0] +=20;
-              recttangle();
+           for(int i = 0; i < 3; i++){
+                  deleterecttangle(S[i]);
+                  S[i].y += 10;
+                  recttangle(S[i]);
+                  //S[i+1] = S[i];
+              }
               delay(50);
         }
 }
@@ -93,20 +117,58 @@ void testdrawtext(char *text, uint16_t color) {
   tft.setTextWrap(true);
   tft.print(text);
 }
+/*
+void deleterecttangle(int i) {
+  tft.drawLine(x[i], y[i], x[i] + 10, y[i] , ST7735_WHITE);
+  tft.drawLine(x[i], y[i], x[i], y[i] + 10, ST7735_WHITE);
+  tft.drawLine(x[i] + 10, y[i], x[i] + 10, y[i] + 10, ST7735_WHITE);
+  tft.drawLine(x[i], y[i] + 10, x[i] + 10, y[i] + 10, ST7735_WHITE);
+}
+*//*
+void recttangle(struct Snake S[100]) {
+  int k = a[i];
+  tft.drawLine(S[i].x, S[i].y, S[i].x + 10, S[i].y , ST7735_BLACK);
+  tft.drawLine(S[i].x, S[i].y, S[i].x, S[i].y + 10, ST7735_BLACK);
+  tft.drawLine(S[i].x + 10 , S[i].y, S[i].x + 10, S[i].y +10, ST7735_BLACK);
+  tft.drawLine(S[i].x, S[i].y + 10, S[i].x + 10, S[i].y +10 , ST7735_BLACK);
+}*/
 
-void deleterecttangle() {
-  tft.drawLine(x[0], y[0], x[0] + 20, y[0] , ST7735_WHITE);
-  tft.drawLine(x[0], y[0], x[0], y[0] + 20, ST7735_WHITE);
-  tft.drawLine(x[0] + 20, y[0], x[0] + 20, y[0] + 20, ST7735_WHITE);
-  tft.drawLine(x[0], y[0] + 20, x[0] + 20, y[0] + 20, ST7735_WHITE);
+void recttangle(struct Snake S) {
+  tft.drawLine(S.x, S.y, S.x + 10, S.y , ST7735_BLACK);
+  tft.drawLine(S.x, S.y, S.x, S.y + 10, ST7735_BLACK);
+  tft.drawLine(S.x + 10 , S.y, S.x + 10, S.y +10, ST7735_BLACK);
+  tft.drawLine(S.x, S.y + 10, S.x + 10, S.y +10 , ST7735_BLACK);
 }
 
+void deleterecttangle(struct Snake S) {
+  tft.drawLine(S.x, S.y, S.x + 10, S.y , ST7735_WHITE);
+  tft.drawLine(S.x, S.y, S.x, S.y + 10, ST7735_WHITE);
+  tft.drawLine(S.x + 10 , S.y, S.x + 10, S.y +10, ST7735_WHITE);
+  tft.drawLine(S.x, S.y + 10, S.x + 10, S.y +10 , ST7735_WHITE);
+}
+/*
+void deleterecttangleOne() {
+  tft.drawLine(x[1], y[1], x[1] + 10, y[1] , ST7735_WHITE);
+  tft.drawLine(x[1], y[1], x[1], y[1] + 10, ST7735_WHITE);
+  tft.drawLine(x[1] + 10, y[1], x[1] + 10, y[1] + 10, ST7735_WHITE);
+  tft.drawLine(x[1], y[1] + 10, x[1] + 10, y[1] + 10, ST7735_WHITE);
+}
+
+void recttangleOne() {
+  tft.drawLine(x[1], y[1], x[1] + 10, y[1] , ST7735_BLACK);
+  tft.drawLine(x[1], y[1], x[1], y[1] + 10, ST7735_BLACK);
+  tft.drawLine(x[1] + 10, y[1], x[1] + 10, y[1] + 10, ST7735_BLACK);
+  tft.drawLine(x[1], y[1] + 10, x[1] + 10, y[1] + 10, ST7735_BLACK);
+}
+*/
+/*
 void recttangle() {
   tft.drawLine(x, y, x + 20, y , ST7735_BLACK);
   tft.drawLine(x, y, x, y + 20, ST7735_BLACK);
   tft.drawLine(x + 20, y, x + 20, y + 20, ST7735_BLACK);
   tft.drawLine(x, y + 20, x + 20, y + 20, ST7735_BLACK);
 }
+*/
 
 void testlines(uint16_t color) {
   tft.fillScreen(ST7735_BLACK);
