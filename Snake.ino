@@ -29,6 +29,8 @@ struct Snake{
 struct Snake S[100];
 struct Snake f; 
 
+int delaytime;
+
 
 void setup(void) {
   Serial.begin(9600);
@@ -69,135 +71,74 @@ void setup(void) {
   f.x = 100;
   f.y = 100;
   recttangle(f);
+  delaytime = 250;
 }
 
 void loop() {
-  //tft.invertDisplay(true);
-  //delay(500);
-  //tft.invertDisplay(false);
-  //delay(500);
+  generatefood();
+  isgameover();
 
   SensorWert = analogRead(A0);
-  if (SensorWert > 1000){ var = 1;}
-  if (SensorWert < 100){ var = 2;}
+  if (SensorWert > 900){ var = 1;}
+  if (SensorWert < 200){ var = 2;}
   SensorWert = analogRead(A1);
-  if (SensorWert > 1000){ var = 3;}
-  if (SensorWert < 100){ var = 4;} 
-  /*
-  switch (Richtung)​{
-      case 1:
-        // statements
-        S[0].x += 10;
-        break;
-      case 2:
-        // statements
-        S[0].x -= 10;
-        break;
-      case 3:
-        // statements
-        S[0].y += 10;
-        break;
-      case 4:
-        // statements
-        S[0].y -= 10;
-        break;
-      
-  }
-  */
+  if (SensorWert > 900){ var = 3;}
+  if (SensorWert < 200){ var = 4;} 
+
   switch (var) {
   case 1:
-    //do something when var equals 1
-    //for(int i = 0; i< Snakelength; i++){
-      deleterecttangle(S[Snakelength-1]);
-    //}
+    deleterecttangle(S[Snakelength-1]);
     for(int i = Snakelength-2; i > -1; i--){
-      S[i+1].y = S[i].y;
-      S[i+1].x = S[i].x;
+      S[i+1] = S[i];
     }
-    //S[1] = S[0];
-    S[0].x -= 10;/*
-    for(int i = 1; i < Snakelength; i++){
-      S[i-1] = S[i];
-    }*/
+    S[0].x -= 10;
     for(int i = 0; i< Snakelength; i++){
       recttangle(S[i]);
     }
-    delay(1000);
+    delay(delaytime);
     break;
   case 2:
-    //do something when var equals 2
-    //deleterecttangle(S[Snakelength-1]);
-    //S[Snakelength] = S[Snakelength -1];
-    //for(int i = 0; i< Snakelength; i++){
       deleterecttangle(S[Snakelength-1]);
-    //}
     for(int i = Snakelength-2; i > -1; i--){
-      S[i+1].y = S[i].y;
-      S[i+1].x = S[i].x;
+      S[i+1] = S[i];
     }
-    //S[1] = S[0];
     S[0].x += 10;
-    /*for(int i = Snakelength -1; i > 1; i--){
-      S[i-1] = S[i];
-    }*/
     for(int i = 0; i< Snakelength; i++){
       recttangle(S[i]);
     }
-    delay(1000);
+    delay(delaytime);
     break;
   case 3:
-    //do something when var equals 2
-    //for(int i = 0; i< Snakelength; i++){
-      deleterecttangle(S[Snakelength-1]);
-    //}
+    deleterecttangle(S[Snakelength-1]);
     for(int i = Snakelength-2; i > -1; i--){
-      S[i+1].y = S[i].y;
-      S[i+1].x = S[i].x;
+      S[i+1] = S[i];
     }
-    //S[1] = S[0];
-    S[0].y += 10;/*
-    for(int i = Snakelength -1; i > 1; i--){
-      S[i-1] = S[i];
-    }*/
+    S[0].y += 10;
     for(int i = 0; i< Snakelength; i++){
       recttangle(S[i]);
     }
-    //S[Snakelength] = S[Snakelength -1];
-    //S[0].y += 10;
-    //recttangle(S[0]);
-    delay(1000);
+    delay(delaytime);
     break;
   case 4:
-    //do something when var equals 2
-    //for(int i = 0; i< Snakelength; i++){
       deleterecttangle(S[Snakelength-1]);
-    //}
     for(int i = Snakelength-2; i > -1; i--){
-      S[i+1].y = S[i].y;
-      S[i+1].x = S[i].x;
+      S[i+1] = S[i];
     }
-    //S[1] = S[0];
     S[0].y -= 10;
-    /*for(int i = Snakelength -1; i > 1; i--){
-      S[i-1] = S[i];
-    }*/
     for(int i = 0; i< Snakelength; i++){
       recttangle(S[i]);
     }
-    delay(1000);
+    delay(delaytime);
     break;
   default:
-    // if nothing else matches, do the default
-    // default is optional
     break;
   }
-  //deleterecttangle(S[0]);
-  //recttangle(S[0]);
-  //delay(1000);
 
+  /*
   Serial.print((String)"Das ist X.1 " + S[0].x + "Das ist Y.1 " + S[0].y + "\n");
   Serial.print((String)"Das ist X.2 " + S[1].x + "Das ist Y.2 " + S[1].y + "\n");
   Serial.print((String)"Das ist X.3 " + S[2].x + "Das ist Y.3 " + S[2].y + "\n \n \n");
+  */
 }
 
 void generatefood(){
@@ -211,6 +152,14 @@ void generatefood(){
     f.x = xtemp - (xtemp%10);
     f.y = ytemp - (ytemp%10);
     recttangle(f);
+  }
+}
+
+void isgameover(){
+  if((S[0].x > 120 || S[0].x < 0) || (S[0].y > 160 || S[0].y < 0)){
+  tft.fillScreen(ST7735_BLACK);
+  testdrawtext("GAME OVER", ST7735_WHITE);
+  delay(50000);
   }
 }
 
