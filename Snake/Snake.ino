@@ -31,12 +31,15 @@ struct Snake f;
 
 int delaytime;
 
+enum { JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT } jostick;
+//enum { JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT } state;
 
 void setup(void) {
   Serial.begin(9600);
   Serial.print("Hello! ST7735 TFT Test");
   // Use this initializer if you're using a 1.8" TFT
   tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
+  //tft.initR(INITR_WHITETAB);
   // Use this initializer (uncomment) if you're using a 1.44" TFT
   //tft.initR(INITR_144GREENTAB);   // initialize a ST7735S chip, black tab
   // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
@@ -44,15 +47,16 @@ void setup(void) {
   Serial.println("Initialized");
   uint16_t time = millis();
   tft.fillScreen(ST7735_BLACK);
+  tft.fillScreen(ST7735_WHITE);
   //time = millis() - time;
   Serial.println(time, DEC);
   //delay(500);
   // large block of text
   //chart welcome = "Welcome to the greatest video game console ";
   //testdrawtext(welcome, 0);
-  testdrawtext("The best console you will ever see", ST7735_WHITE);
+  testdrawtext("The best console you will ever see", ST7735_BLACK);
   delay(500);
-  tft.fillScreen(ST7735_WHITE);
+  tft.fillScreen(ST7735_BLACK);
 
   Snakelength = 3;
   S[0].x = 40;
@@ -77,16 +81,33 @@ void setup(void) {
 void loop() {
   generatefood();
   isgameover();
-
+  //JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT
   SensorWert = analogRead(A0);
-  if (SensorWert > 900){ var = 1;}
-  if (SensorWert < 200){ var = 2;}
+  if (SensorWert > 900){ var = JOYUP;}
+  if (SensorWert < 200){ var = JOYDOWN;}
   SensorWert = analogRead(A1);
-  if (SensorWert > 900){ var = 3;}
-  if (SensorWert < 200){ var = 4;} 
+  if (SensorWert > 900){ var = JOYRIGHT;}
+  if (SensorWert < 200){ var = JOYLEFT;} 
 
   switch (var) {
-  case 1:
+  case JOYUP:
+    MoveUp();
+    break;
+  case JOYDOWN:
+    MoveDown();
+    break;
+  case JOYRIGHT:
+    MoveRight();
+    break;
+  case JOYLEFT:
+    MoveLeft();
+    break;
+  default:
+    break;
+  }
+}
+
+void MoveUp(){
     deleterecttangle(S[Snakelength-1]);
     for(int i = Snakelength-2; i > -1; i--){
       S[i+1] = S[i];
@@ -96,9 +117,9 @@ void loop() {
       recttangle(S[i]);
     }
     delay(delaytime);
-    break;
-  case 2:
-      deleterecttangle(S[Snakelength-1]);
+}
+void MoveDown(){
+    deleterecttangle(S[Snakelength-1]);
     for(int i = Snakelength-2; i > -1; i--){
       S[i+1] = S[i];
     }
@@ -107,8 +128,8 @@ void loop() {
       recttangle(S[i]);
     }
     delay(delaytime);
-    break;
-  case 3:
+}
+void MoveRight(){
     deleterecttangle(S[Snakelength-1]);
     for(int i = Snakelength-2; i > -1; i--){
       S[i+1] = S[i];
@@ -118,9 +139,9 @@ void loop() {
       recttangle(S[i]);
     }
     delay(delaytime);
-    break;
-  case 4:
-      deleterecttangle(S[Snakelength-1]);
+}
+void MoveLeft(){
+    deleterecttangle(S[Snakelength-1]);
     for(int i = Snakelength-2; i > -1; i--){
       S[i+1] = S[i];
     }
@@ -129,17 +150,13 @@ void loop() {
       recttangle(S[i]);
     }
     delay(delaytime);
-    break;
-  default:
-    break;
-  }
+}
 
   /*
   Serial.print((String)"Das ist X.1 " + S[0].x + "Das ist Y.1 " + S[0].y + "\n");
   Serial.print((String)"Das ist X.2 " + S[1].x + "Das ist Y.2 " + S[1].y + "\n");
   Serial.print((String)"Das ist X.3 " + S[2].x + "Das ist Y.3 " + S[2].y + "\n \n \n");
   */
-}
 
 void generatefood(){
     if(S[0].x == f.x && S[0].y == f.y){
@@ -171,15 +188,15 @@ void testdrawtext(char *text, uint16_t color) {
 }
 
 void recttangle(struct Snake S) {
-  tft.drawLine(S.x, S.y, S.x + 10, S.y , ST7735_BLACK);
-  tft.drawLine(S.x, S.y, S.x, S.y + 10, ST7735_BLACK);
-  tft.drawLine(S.x + 10 , S.y, S.x + 10, S.y +10, ST7735_BLACK);
-  tft.drawLine(S.x, S.y + 10, S.x + 10, S.y +10 , ST7735_BLACK);
-}
-
-void deleterecttangle(struct Snake S) {
   tft.drawLine(S.x, S.y, S.x + 10, S.y , ST7735_WHITE);
   tft.drawLine(S.x, S.y, S.x, S.y + 10, ST7735_WHITE);
   tft.drawLine(S.x + 10 , S.y, S.x + 10, S.y +10, ST7735_WHITE);
   tft.drawLine(S.x, S.y + 10, S.x + 10, S.y +10 , ST7735_WHITE);
+}
+
+void deleterecttangle(struct Snake S) {
+  tft.drawLine(S.x, S.y, S.x + 10, S.y , ST7735_BLACK);
+  tft.drawLine(S.x, S.y, S.x, S.y + 10, ST7735_BLACK);
+  tft.drawLine(S.x + 10 , S.y, S.x + 10, S.y +10, ST7735_BLACK);
+  tft.drawLine(S.x, S.y + 10, S.x + 10, S.y +10 , ST7735_BLACK);
 }
