@@ -1,202 +1,295 @@
 #include <Adafruit_GFX.h>    // include Core graphics library
 #include <Adafruit_ST7735.h> // include Hardware-specific library
 #include <SPI.h>
-// For the breakout, you can use any 2 or 3 pins
-// These pins will also work for the 1.8" TFT shield
+
 #define TFT_CS     10
 #define TFT_RST    8  // you can also connect this to the Arduino reset                      
 #define TFT_DC     9  // in which case, set this #define pin to -1!
-// Option 1 (recommended): must use the hardware SPI pins
-// (for UNO thats sclk = 13 and sid = 11) and pin 10 must be
-// an output. This is much faster - also required if you want
-// to use the microSD card (see the image drawing example)
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_RST);
-// Option 2: use any pins but a little slower!
-#define TFT_SCLK 13   // set these to be whatever pins you like!
-#define TFT_MOSI 11   // set these to be whatever pins you like!
-//Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
-
-
+#define TFT_SCLK 13   
+#define TFT_MOSI 11  
 
 int SensorWert = 0;
 int var = 0;
-int Snakelength;
+char Snakelength;
+int State = 0;
+char xtemp; 
+char ytemp;
+unsigned long previousMillis = 0;
+const long interval = 250;
+char avoidmissgenerationx = 0;
+char avoidmissgenerationy = 0;
+bool copyonemore = false;
+char currentPositionx;
+char currentPositiony;
 
 struct Snake{
   int x;
   int y;
 };
-struct Snake S[100];
+
+
+struct Snake S[100] = {0};
 struct Snake f; 
 
-int delaytime;
+char Field[10][10] = {{0,0}};
 
-enum { JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT } jostick;
-//enum { JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT } state;
+enum joystick { JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT };
+enum SNAKEMOVINGSTATE { UP, DOWN, RIGHT, LEFT};
 
 void setup(void) {
   Serial.begin(9600);
-  Serial.print("Hello! ST7735 TFT Test");
-  // Use this initializer if you're using a 1.8" TFT
-  tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
-  //tft.initR(INITR_WHITETAB);
-  // Use this initializer (uncomment) if you're using a 1.44" TFT
-  //tft.initR(INITR_144GREENTAB);   // initialize a ST7735S chip, black tab
-  // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
-  //tft.initR(INITR_MINI160x80);   // initialize a ST7735S chip, mini display
-  Serial.println("Initialized");
+  tft.initR(INITR_BLACKTAB); 
   uint16_t time = millis();
-  tft.fillScreen(ST7735_BLACK);
-  tft.fillScreen(ST7735_WHITE);
-  //time = millis() - time;
   Serial.println(time, DEC);
-  //delay(500);
-  // large block of text
-  //chart welcome = "Welcome to the greatest video game console ";
-  //testdrawtext(welcome, 0);
-  testdrawtext("The best console you will ever see", ST7735_BLACK);
-  delay(500);
+  delay(100);
   tft.fillScreen(ST7735_BLACK);
+  GeneratePlaygound();
 
   Snakelength = 3;
-  S[0].x = 40;
-  S[0].y = 40;
+  S[0].x = 90;
+  S[0].y = 70;
+  Field[8][3] = Snakelength; 
 
-  S[1].x = 30;
-  S[1].y = 40;
+  S[1].x = 90;
+  S[1].y = 60;
+  Field[8][2] = Snakelength;
 
-  S[2].x = 20;
-  S[2].y = 40;
+  S[2].x = 90;
+  S[2].y = 50;
+  Field[8][2] = Snakelength;
 
-  //starting Point  
-  recttangle(S[0]);
+  currentPositionx = 9;
+  currentPositiony = 7;
 
-  //For generating the first fruit Food 
+  //For generating the first fruit Food, hardcoded since no one cares
   f.x = 100;
   f.y = 100;
-  recttangle(f);
-  delaytime = 250;
+  tft.drawRect(f.x+2, f.y+2, 6, 6,ST7735_RED);
+  //GeneratePlayground();
+  State = RIGHT;
 }
 
-void loop() {
-  generatefood();
-  isgameover();
-  //JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT
-  SensorWert = analogRead(A0);
-  if (SensorWert > 900){ var = JOYUP;}
-  if (SensorWert < 200){ var = JOYDOWN;}
-  SensorWert = analogRead(A1);
-  if (SensorWert > 900){ var = JOYRIGHT;}
-  if (SensorWert < 200){ var = JOYLEFT;} 
+void GeneratePlaygound(){
+  tft.fillRect(10,40,100,100, ST7735_WHITE);
+  testdrawtext("SNAKE", ST7735_WHITE, 10, 10);
+  testdrawtext("Press Joystick to", ST7735_WHITE, 10, 20);
+  testdrawtext("go to the Menu", ST7735_WHITE, 10, 30);
+  
+};
 
-  switch (var) {
-  case JOYUP:
-    MoveUp();
-    break;
-  case JOYDOWN:
-    MoveDown();
-    break;
-  case JOYRIGHT:
-    MoveRight();
-    break;
-  case JOYLEFT:
-    MoveLeft();
-    break;
-  default:
-    break;
+void decreaselegnth(){
+  for(int Lmao = 0; Lmao < 10; Lmao++){
+    for(int Lmao2 = 0; Lmao2< 10; Lmao2++){
+      if(Field[Lmao][Lmao2] > 0){
+        Field[Lmao][Lmao2] -= 1;
+      }
+    }
   }
 }
 
+void loop() {
+  SnakeGame();
+  
+}
+
+void SnakeGame(){
+  unsigned long currentMillis = millis();
+  isgamewon();
+  generatefood();
+  collisiondetection();
+  //JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT
+  ReadJoyStick();
+  
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+
+    switch (State) {
+    case UP:
+    MoveUp();
+    if(var == JOYRIGHT){
+      State = RIGHT;
+    }
+    if(var == JOYLEFT){
+      State = LEFT;
+    }
+      break;
+    case DOWN:
+    MoveDown();
+    if(var == JOYRIGHT){
+      State = RIGHT;
+    }
+    if(var == JOYLEFT){
+      State = LEFT;
+    }
+      break;
+    case RIGHT:
+    MoveRight();
+    if(var == JOYUP){
+      State = UP;
+    }
+    if(var == JOYDOWN){
+      State = DOWN;
+    }
+      break;
+    case LEFT:
+    MoveLeft();
+    if(var == JOYUP){
+      State = UP;
+    }
+    if(var == JOYDOWN){
+      State = DOWN;
+    }
+      break;
+    default:
+      break;
+    }
+  }
+}
+
+void ReadJoyStick(){
+  //JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT
+  SensorWert = analogRead(A0);
+  if (SensorWert > 800){ var = JOYUP;}
+  if (SensorWert < 200){ var = JOYDOWN;}
+  SensorWert = analogRead(A1);
+  if (SensorWert > 800){ var = JOYRIGHT;}
+  if (SensorWert < 200){ var = JOYLEFT;} 
+}
+//ST7735_BLACK
+//ST7735_WHITE
 void MoveUp(){
-    deleterecttangle(S[Snakelength-1]);
-    for(int i = Snakelength-2; i > -1; i--){
-      S[i+1] = S[i];
-    }
-    S[0].x -= 10;
-    for(int i = 0; i< Snakelength; i++){
-      recttangle(S[i]);
-    }
-    delay(delaytime);
+    //decreaselegnth();
+  tft.drawRect(S[Snakelength-1].x+1,S[Snakelength-1].y+1,8,8,ST7735_WHITE);
+  if(copyonemore == true){
+    copyonemore = false;
+    Snakelength++;
+  }
+  //currentPositiony += 1;
+  //Field[currentPositiony][currentPositionx] = Snakelength;
+  for(int i = Snakelength-2; i > -1; i--){
+    S[i+1] = S[i];
+  }
+  S[0].x -= 10;
+  tft.drawRect(S[0].x+1,S[0].y+1,8,8,ST7735_BLACK);
 }
 void MoveDown(){
-    deleterecttangle(S[Snakelength-1]);
-    for(int i = Snakelength-2; i > -1; i--){
-      S[i+1] = S[i];
-    }
-    S[0].x += 10;
-    for(int i = 0; i< Snakelength; i++){
-      recttangle(S[i]);
-    }
-    delay(delaytime);
+    //decreaselegnth();
+  tft.drawRect(S[Snakelength-1].x+1,S[Snakelength-1].y+1,8,8,ST7735_WHITE);
+  if(copyonemore == true){
+    copyonemore = false;
+    Snakelength++;
+  }
+  //currentPositiony -= 1;
+  //Field[currentPositiony][currentPositionx] = Snakelength;
+  for(int i = Snakelength-2; i > -1; i--){
+    S[i+1] = S[i];
+  }
+  S[0].x += 10;
+  tft.drawRect(S[0].x+1,S[0].y+1,8,8,ST7735_BLACK);
 }
 void MoveRight(){
-    deleterecttangle(S[Snakelength-1]);
-    for(int i = Snakelength-2; i > -1; i--){
-      S[i+1] = S[i];
-    }
-    S[0].y += 10;
-    for(int i = 0; i< Snakelength; i++){
-      recttangle(S[i]);
-    }
-    delay(delaytime);
+   // decreaselegnth();
+  tft.drawRect(S[Snakelength-1].x+1,S[Snakelength-1].y+1,8,8,ST7735_WHITE);
+  if(copyonemore == true){
+    copyonemore = false;
+    Snakelength++;
+  }
+  //currentPositionx += 1;
+  //Field[currentPositiony][currentPositionx] = Snakelength;
+  for(int i = Snakelength-2; i > -1; i--){
+    S[i+1] = S[i];
+  }
+  S[0].y += 10;
+  tft.drawRect(S[0].x+1,S[0].y+1,8,8,ST7735_BLACK);
 }
 void MoveLeft(){
-    deleterecttangle(S[Snakelength-1]);
-    for(int i = Snakelength-2; i > -1; i--){
-      S[i+1] = S[i];
-    }
-    S[0].y -= 10;
-    for(int i = 0; i< Snakelength; i++){
-      recttangle(S[i]);
-    }
-    delay(delaytime);
+    //decreaselegnth();
+  tft.drawRect(S[Snakelength-1].x+1,S[Snakelength-1].y+1,8,8,ST7735_WHITE);
+  if(copyonemore == true){
+    copyonemore = false;
+    Snakelength++;
+  }
+  //currentPositionx -= 1;
+  //Field[currentPositiony][currentPositionx] = Snakelength;
+  for(int i = Snakelength-2; i > -1; i--){
+    S[i+1] = S[i];
+  }
+  S[0].y -= 10;
+  tft.drawRect(S[0].x+1,S[0].y+1,8,8,ST7735_BLACK);
 }
 
-  /*
-  Serial.print((String)"Das ist X.1 " + S[0].x + "Das ist Y.1 " + S[0].y + "\n");
-  Serial.print((String)"Das ist X.2 " + S[1].x + "Das ist Y.2 " + S[1].y + "\n");
-  Serial.print((String)"Das ist X.3 " + S[2].x + "Das ist Y.3 " + S[2].y + "\n \n \n");
-  */
 
 void generatefood(){
-    if(S[0].x == f.x && S[0].y == f.y){
-    Snakelength++;
-    deleterecttangle(f);
-    int xtemp; 
-    int ytemp;
-    xtemp = random(120); 
-    ytemp = random(160);
+  if(S[0].x == f.x && S[0].y == f.y){
+    tft.drawRect(f.x+2,f.y+2,6,6,ST7735_WHITE);
+    xtemp = random(10,100); 
+    ytemp = random(40,130);
     f.x = xtemp - (xtemp%10);
     f.y = ytemp - (ytemp%10);
-    recttangle(f);
+    copyonemore = true;
+    for(int k = 0; k < Snakelength; k++){
+      if(S[k].x == f.x && S[k].y == f.y){
+        f.x = (k%10)*10+40;
+        f.y = (k/10)*10+10;
+        k= 0;
+      }
+    }
+    tft.drawRect(f.x+2,f.y+2,6,6,ST7735_RED);
+    /*
+    for(int LmaoA = 0; LmaoA < 10; LmaoA++){
+      for(int LmaoB = 0; LmaoB < 10; LmaoB++){
+        if(Field[LmaoA][LmaoB] == 0){
+          //Offsets 10,40
+          f.x = LmaoA*10+10;
+          f.y = LmaoB*10+40;
+          tft.drawRect(LmaoA+12,LmaoB+42,6,6,ST7735_RED);
+          return;
+        }
+      }
+    }*/
+  }
+}
+//char Array2d[10][10] = {{0,0}};
+
+void collisiondetection(){
+  if((S[0].x > 200 || S[0].x < 0) || (S[0].y > 200 || S[0].y < 0)){
+    Serial.print(S[0].x);
+    Serial.print(S[0].y);
+    //Serial.print(x);
+    //Serial.print(x);
+    isgameover();
+  }
+  for(int i = 1; i < Snakelength; i++){
+    if(S[0].x == S[i].x && S[0].y == S[i].y ){
+    isgameover();
+    }
   }
 }
 
 void isgameover(){
-  if((S[0].x > 120 || S[0].x < 0) || (S[0].y > 160 || S[0].y < 0)){
   tft.fillScreen(ST7735_BLACK);
-  testdrawtext("GAME OVER", ST7735_WHITE);
+  testdrawtext("GAME OVER", ST7735_WHITE, 38, 70);
+  testdrawtext("Press Joystick to", ST7735_WHITE, 10, 120);
+  testdrawtext("go to the Menu", ST7735_WHITE, 10, 130);
+  delay(50000);
+}
+
+void isgamewon(){
+  if(Snakelength == 100){
+  tft.fillScreen(ST7735_BLACK);
+  testdrawtext("YOU WON, congratulations", ST7735_WHITE, 38, 70);
+  testdrawtext("CONGRATULATIONS", ST7735_WHITE, 38, 80);
+  testdrawtext("Press Joystick to", ST7735_WHITE, 10, 120);
+  testdrawtext("go to the Menu", ST7735_WHITE, 10, 130);
   delay(50000);
   }
 }
 
-void testdrawtext(char *text, uint16_t color) {
-  tft.setCursor(0, 0);
+void testdrawtext(char *text, uint16_t color, int x, int y) {
+  tft.setCursor(x, y);
   tft.setTextColor(color);
   tft.setTextWrap(true);
   tft.print(text);
 }
 
-void recttangle(struct Snake S) {
-  tft.drawLine(S.x, S.y, S.x + 10, S.y , ST7735_WHITE);
-  tft.drawLine(S.x, S.y, S.x, S.y + 10, ST7735_WHITE);
-  tft.drawLine(S.x + 10 , S.y, S.x + 10, S.y +10, ST7735_WHITE);
-  tft.drawLine(S.x, S.y + 10, S.x + 10, S.y +10 , ST7735_WHITE);
-}
-
-void deleterecttangle(struct Snake S) {
-  tft.drawLine(S.x, S.y, S.x + 10, S.y , ST7735_BLACK);
-  tft.drawLine(S.x, S.y, S.x, S.y + 10, ST7735_BLACK);
-  tft.drawLine(S.x + 10 , S.y, S.x + 10, S.y +10, ST7735_BLACK);
-  tft.drawLine(S.x, S.y + 10, S.x + 10, S.y +10 , ST7735_BLACK);
-}
