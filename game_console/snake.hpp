@@ -25,7 +25,6 @@ struct Snake{
 struct Snake S[100] = {0};
 struct Snake f; 
 
-char Field[10][10] = {{0,0}};
 
 enum joystick { JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT };
 enum SNAKEMOVINGSTATE { UP, DOWN, RIGHT, LEFT};
@@ -140,8 +139,8 @@ void generatefood(){
     copyonemore = true;
     for(int k = 0; k < Snakelength; k++){
       if(S[k].x == f.x && S[k].y == f.y){
-        f.x = (k%10)*10+40;
-        f.y = (k/10)*10+10;
+        f.x = (k%10)*10+10;
+        f.y = (k/10)*10+40;
         k= 0;
       }
     }
@@ -171,7 +170,7 @@ void isgameover(){
 }
 
 void collisiondetection(){
-  if((S[0].x > 200 || S[0].x < 0) || (S[0].y > 200 || S[0].y < 0)){
+  if((S[0].x > 110 || S[0].x < 10) || (S[0].y > 140 || S[0].y < 40)){
     Serial.print(S[0].x);
     Serial.print(S[0].y);
     //Serial.print(x);
