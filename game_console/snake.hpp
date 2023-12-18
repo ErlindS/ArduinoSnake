@@ -46,15 +46,6 @@ void GeneratePlaygound(){
   
 };
 
-void decreaselegnth(){
-  for(int Lmao = 0; Lmao < 10; Lmao++){
-    for(int Lmao2 = 0; Lmao2< 10; Lmao2++){
-      if(Field[Lmao][Lmao2] > 0){
-        Field[Lmao][Lmao2] -= 1;
-      }
-    }
-  }
-}
 
 void ReadJoyStick(){
   //JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT
@@ -141,7 +132,6 @@ void generatefood(){
       if(S[k].x == f.x && S[k].y == f.y){
         f.x = (k%10)*10+10;
         f.y = (k/10)*10+40;
-        k= 0;
       }
     }
     tft.drawRect(f.x+2,f.y+2,6,6,ST7735_RED);
