@@ -11,6 +11,7 @@ char ytemp;
 unsigned long previousMillis = 0;
 const long interval = 250;
 bool copyonemore = false;
+bool SeekFreePlace = false;
 
 struct Snake{
   int x;
@@ -100,7 +101,22 @@ void MoveLeft(){
   tft.drawRect(S[0].x+1,S[0].y+1,8,8,ST7735_BLACK);
 }
 
-
+void LookOutForFreeSpace(){
+    if(SeekFreePlace == true){
+      for(int ii = 0; ii < 10; ii++){
+        for(int iii = 0; iii < 10; iii++){
+          for(int iv = 0; iv < Snakelength; iv++){
+            if(!(ii*10+30 == S[iv].x && iii*10+10 == S[iv].y)){
+              f.x = ii*10+30;
+              f.y = iii*10+10;
+              SeekFreePlace == false;
+              return;
+            }
+          }
+        }
+      }
+    }
+}
 void generatefood(){
   if(S[0].x == f.x && S[0].y == f.y){
     tft.drawRect(f.x+2,f.y+2,6,6,ST7735_WHITE);
@@ -109,12 +125,14 @@ void generatefood(){
     f.x = xtemp - (xtemp%10);
     f.y = ytemp - (ytemp%10);
     copyonemore = true;
+
     for(int k = 0; k < Snakelength; k++){
       if(S[k].x == f.x && S[k].y == f.y){
-        f.x = (k%10)*10+30;
-        f.y = (k/10)*10+10;
+        SeekFreePlace = true;
+        break;
       }
     }
+    LookOutForFreeSpace();
     tft.drawRect(f.x+2,f.y+2,6,6,ST7735_RED);
   }
 }
