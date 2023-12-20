@@ -1,6 +1,7 @@
 #include "globalDefs.hpp"
 #include "pong.hpp"
 #include "snake.hpp"
+#include "flappy_bird.hpp"
 
 #define MENU_DISTANCE 30
 
@@ -56,7 +57,7 @@ void setup() {
   tft.initR(INITR_BLACKTAB);
 
   //Joystick ONE init
-  pinMode(SW_ONE, INPUT);
+  pinMode(SW_ONE, INPUT_PULLUP);
   digitalWrite(SW_ONE, HIGH);
 
   //init random
@@ -116,15 +117,15 @@ void loop() {
     switch (selectedGame) {
       case snake:
         initSnake();
-        delay(150);
         while(1) SnakeGame();
         break;
       case pong: //< execute pong
         if(initPong()) Serial.println("Pong init done!");
-        delay(150);
         while(1) loopPong();
         break;
       case flappy:
+        initFlappyBird();
+        gameloop1.loop();
         break;
     }
   }

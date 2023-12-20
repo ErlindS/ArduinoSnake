@@ -4,6 +4,7 @@
 #include <Adafruit_GFX.h>    // include Core graphics library
 #include <Adafruit_ST7735.h> // include Hardware-specific library
 #include <SPI.h>
+#include <ArduinoSTL.h>
 
 //pins
 #define TFT_CS    10
