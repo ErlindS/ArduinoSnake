@@ -49,6 +49,13 @@ enum pillar_directions {bottom, top};
 #define BIRD_SIZE 15
 
 
+/*
+ * Innerhalb einer Sekunde werden zahlreiche Schleifeniterationen des gameloops durchlaufen.
+ * Wenn ein Nutzer einen Knopf drückt, wird der Knopf höchstwahrscheinlich über meherere Schleifeniterationen hinweg gedrückt.
+ * Optimaler Weise ist ein Knopf nur für eine einzige Iteration "aktiviert" und ist danach, bis der Knopf losgelassen und wieder gedrückt wird, "deaktiviert".
+ * Mit dieser Klasse können Knöpfe in solcher Weise genutzt werden. Die Funktion "refreshAll" muss in jeder Schleifeniteration ausgeführt werden.
+ * Anschließend kann man der Funktion "isOn" auf einem Objekt "Button" prüfen, ob dieser in der aktuellen Iteration als "aktiviert" gilt.
+ */
 struct buttons_class {
   struct button {
     bool state;
@@ -99,6 +106,7 @@ struct buttons_class {
 
   };
 
+  // Für die Spielekonsole werden nur zwei Buttons benötigt
   button A;
   button B;
 
@@ -114,6 +122,7 @@ struct buttons_class {
 
 };
 
+// Mit diesem zwei-dimensionalen Vektor können X- und Y-Koordinaten kompakter gehandhabt werden
 struct vector2 {
   int x;
   int y;
@@ -124,6 +133,8 @@ struct vector2 {
 };
 
 
+// Um die Kollisionserkennung zu vereinfachen bekommt jedes rechteckige Objekt eine Instanz der Klasse "corners".
+// Darin enthalten sind vier Vektoren, welche die vier Ecken des Rechtecks repräsentieren
 struct corners {
   vector2 topLeft;
   vector2 topRight;
@@ -138,22 +149,22 @@ struct corners {
 };
 
 
+// Diese Klasse repräsentiert den Vogel. Hier wird die Position des Vogels gespeichert, die neue Position und Geschwindigkeit berechnet,
+// und der Vogel auf der Anzeige dargestellt.
 struct bird_class {
-  //double position;
-  //double previous_position;
+  corners corner;
+  vector2 previous_position;
   int g;
   double maxSpeed;
   double speed;
   double speed_diff;
-  int xPos; 
-  corners corner;
-  vector2 previous_position;
+
 
   bird_class() {
     this->reset();
   }
 
-  void applyPhysics() {
+  void applyPhysics() { // Physikalischer Versuch: Wurf nach Oben
     this->previous_position.y = this->corner.topLeft.y;
 
     corner.topLeft.y = (corner.topLeft.y + (speed * speed_diff)) - (0.5 * this->g * speed_diff * speed_diff);
@@ -166,15 +177,18 @@ struct bird_class {
 
     this->calculateCorners_topLeft();
   }
-  // speed diff koennte zeit sein
-  // siehe: senkrechter wurf nach oben
 
+
+  // Um nach oben zu fliegen muss die Geschwindigkeit auf einen Wert kleiner als Null gesetzt werden
   void flap() {
     this->speed = -27.0;
   }
 
 
-  void draw(int eraseMethod) {                // refer for parameters to top of code
+  // Mit dieser Funktion wird der Vogel mit seiner aktuellen Position auf der Anzeige dargestellt.
+  // Mit dem bevorzugten Parameter "erase_square" wird der Vogel auf seiner vorherigen Position auf dem Bildschirm schwarz übermalt.
+  // Dies ist deutlich schneller als bei jeder Schleifeniteration den gesamten Bildschirm zu übermalen
+  void draw(int eraseMethod) {
     switch (eraseMethod) {
     case do_not_erase:
       break;
@@ -194,10 +208,9 @@ struct bird_class {
     tft.fillRect(corner.topLeft.x, corner.topLeft.y, BIRD_SIZE, BIRD_SIZE, ST7735_YELLOW);
   }
 
+  // Setzt alle Attribute auf ihre Standardwerte. Wird bei jedem neuen Spiel aufgerufen
   void reset() {
-    //this->position          = 30.0;
-    //this->previous_position = 0.0;
-    corner.topLeft.y = 30;                 // Relevant Parameter !!!
+    corner.topLeft.y = 30;
     corner.topLeft.x = 30;
     previous_position.y = 30;
     previous_position.x = 30;
@@ -206,9 +219,9 @@ struct bird_class {
     this->maxSpeed          = 20.0;        // default: 20.0
     this->speed             = maxSpeed;
     this->speed_diff        = 0.175;       // default: 0.05
-    //this->xPos              = 50;
   }
 
+  // Hier werden alle Ecken, ausgehend von der Ecke "topLeft" berechnet
   void calculateCorners_topLeft() {
     corner.topRight.x = corner.topLeft.x + BIRD_SIZE;
     corner.topRight.y = corner.topLeft.y;
@@ -220,6 +233,7 @@ struct bird_class {
     corner.bottomRight.y = corner.topLeft.y + BIRD_SIZE;
   }
 
+  // Mit dieser Hilfsfunktion kann ermittelt werden, ob der Vogel den Boden berührt hat
   bool check_border_collision() {
     // Returns true if border is hit
     calculateCorners_topLeft();
@@ -232,11 +246,17 @@ struct bird_class {
 };
 
 
+// Diese Klasse verwaltet alle Säulen im gesamten Spiel
 struct pillars {
+
+  // Die Klasse "single_pillar" umfasst eine einzelne Säule.
+  // Wenn es sich dabei um eine "untere" Säule handelt, wird die Funktion make_pillar_bottom() aufgerufen
+  // Wenn es sich dabei um eine "obere" Säule handelt, wird die Funktion make_pillar_top() aufgerufen
+  // Diese einzelnen Pillars werden nur von der Klasse "two_pillars" allokiert.
 
   struct single_pillar {
     corners corner;
-    pillar_directions direction;
+    pillar_directions direction; // Veraltet
     int height;
     vector2 previous_position;
 
@@ -253,12 +273,14 @@ struct pillars {
       this->corner.topLeft.set(ix, iy);
     }
 
+    // Mit der Hilfsfunktion kann eine Säule durch Angabe eine Höhe generiert werden
     void make_pillar_from_height(int iHeight, int x_coordinate, int y_offset) {
       this->height = iHeight;
       corner.topLeft.x = x_coordinate;
       corner.topLeft.y = 128 - iHeight - y_offset;
     }
 
+    // Identisch zu gleichnamiger Funktion in bird_class
     void calculateCorners_topLeft() {
       corner.topRight.x = corner.topLeft.x + PILLAR_WIDTH;
       corner.topRight.y = corner.topLeft.y;
@@ -287,8 +309,7 @@ struct pillars {
 
     void make_pillar_top(int iHeight_of_bottom, int x_coordinate, int distance) {
       this->direction = top;
-      // WAS IST DIE HEIGHT ???????
-      // HEIGHT-OBEN = 128 - distance - height
+      // HEIGHT_UPPER = 128 - distance - height
       // y_offset = distance + height
 
       int upper_height = 128 - distance - iHeight_of_bottom;
@@ -298,6 +319,7 @@ struct pillars {
       calculateCorners_topLeft();
     }
 
+    // Identisch zu gleichnamiger Funktion in bird_class
     void draw(int eraseMethod) {
       switch (eraseMethod) {
         case do_not_erase:
@@ -317,6 +339,7 @@ struct pillars {
       tft.fillRect(corner.topLeft.x, corner.topLeft.y, PILLAR_WIDTH, height, ST7735_GREEN);
     }
     
+    // Speichert die aktuelle Position als die vorherige Position und verschiebt die X-Koordinaten aller Säulen um eins nach links
     void shift_left() {
       previous_position.x = corner.topLeft.x;
       previous_position.y = corner.topLeft.y;
@@ -368,6 +391,7 @@ struct pillars {
       upper.shift_left();
     }
 
+    // Hier wird geprüft, ob der vorderste Pillar nichtmehr sichtbar ist
     bool check_if_outofbounds() {
       // Returns true if invisible
       if (lower.corner.topRight.x < 0) {
@@ -376,6 +400,7 @@ struct pillars {
       else return false;
     }
 
+    // Hier wird geprüft, ob ein neuer Pillar nachgerückt werden muss
     bool check_for_distance_between_pillars() {
       if (lower.corner.topRight.x < 160 - DISTANCE_BETWEEN_PILLARS) {
         return true;
@@ -386,20 +411,24 @@ struct pillars {
     // Bird-Pillar collision is determined in gameloop, because bird and pillar do not have access to each other
     // Similarly, the Score is also determined in gameloop
 
+    // Bugfix
     void set_score_counted(bool input) {
       this->score_counted = input;
     }
 
   }; // two_pillars
 
-  // This class manages all pillars in the game. It spawns and destroys pillars as needed. Pillars should only be moved via this class
+  // Diese Klasse verwaltet alle Säulen im Spiel. Bei Bedarf werden Säulen allokiert oder deallokiert
 
+  // Hier werden alle Säulenpaare gespeichert
   std::vector<two_pillars *> pillarvector;
 
+  // Vektor initialisieren
   void initialize_vector() {
     pillarvector.push_back(new two_pillars);
   }
 
+  // Vektor leeren
   void clear_vector() {
     for (auto i : pillarvector) {
       delete i;
@@ -407,12 +436,14 @@ struct pillars {
     pillarvector.clear();
   }
 
+  // Verschiebt alle Säulenpaare nach links
   void shift_left() {
     for (auto i : pillarvector) {
       i->shift_left();
     }
   }
 
+  // Löscht ggf. vordersten Pillar
   void check_if_front_is_outofbounds() {
     if (pillarvector.front()->check_if_outofbounds()) {
       delete pillarvector.front();
@@ -420,18 +451,21 @@ struct pillars {
     }
   }
 
+  // Rückt ggf. einen neuen Pillar nach
   void check_if_new_pillar_is_needed() {
     if (pillarvector.back()->check_for_distance_between_pillars()) {
       pillarvector.push_back(new two_pillars);
     }
   }
 
+  // Kombiniert Linksverschiebung mit Grenzüberprüfung
   void shift_left_and_check() {
     shift_left();
     check_if_front_is_outofbounds();
     check_if_new_pillar_is_needed();
   }
 
+  // Stellt alle Säulen auf der Anzeige dar
   void draw_all_pillars(int eraseMethod) {
     for (auto i : pillarvector) {
       i->draw(eraseMethod);
@@ -441,6 +475,7 @@ struct pillars {
   
 }; // pillars
 
+// Übergreifende Klasse, welche den Spielablauf regelt
 struct gameloop {
   bird_class * bird;
   buttons_class * buttonsobj;
@@ -449,7 +484,7 @@ struct gameloop {
   bool runLoop;
   bool pause;
 
-  int score;
+  unsigned int score;
 
   gameloop() {
     bird = new bird_class;
@@ -466,6 +501,7 @@ struct gameloop {
     delete pillarsobj;
   }
 
+  // Hier findet der gesamte Spielablauf statt
   void loop() {
     unsigned long oldTimer = millis();
     unsigned long nDelay = 20;
@@ -475,11 +511,13 @@ struct gameloop {
 
 
     while (!pause) {
+      // Hier wird der Startbildschirm angezeigt und das Spiel auf eine neue Runde vorbereitet
       this->press_button_screen();
       this->reset_game();
       tft.fillScreen(ST7735_BLACK);
       this->runLoop = true;
 
+      // Hier findet der zentrale Spielalgorithmus statt
       while (runLoop) {
         if (millis() >= oldTimer + nDelay) {
           buttonsobj->refreshAll();
@@ -512,6 +550,7 @@ struct gameloop {
 
   }
 
+  // Alle Attribute zurücksetzen
   void reset_game() {
     this->runLoop = true;
     this->pause = false;
@@ -539,6 +578,7 @@ struct gameloop {
     else if (this->pause == true)  { this->pause = false; }
   }
 
+  // Hier wird die Kollision zwischen Vogel und Säule geprüft
   bool check_bird_pillar_collision() {
 
     for (auto i : pillarsobj->pillarvector) {
@@ -562,6 +602,7 @@ struct gameloop {
     return false;
   }
 
+  // Hier wird geprüft, ob der Spieler einen Punkt bekommt
   void check_score() {
     if ((pillarsobj->pillarvector.front()->lower.corner.topRight.x < bird->corner.topLeft.x) && pillarsobj->pillarvector.front()->score_counted == false) {
       score++;
@@ -570,6 +611,7 @@ struct gameloop {
     }
   }
 
+  // Zeigt den Punktestand an
   void print_score() {
     tft.setCursor(0, 0);
     tft.setTextColor(ST7735_WHITE, ST7735_BLACK);
@@ -580,6 +622,7 @@ struct gameloop {
     tft.print(this->score);
   }
 
+  // Startbildschirm
   void press_button_screen() {
     tft.fillScreen(ST7735_BLACK);
 
@@ -647,6 +690,7 @@ struct gameloop {
 
   }
 
+  // Game Over Anzeige
   void game_over_screen() {
     this->runLoop = false;
 
@@ -715,6 +759,7 @@ struct gameloop {
 
 gameloop gameloop1;
 
+// Setup Funktion
 void initFlappyBird() {
   // Initialize Screen
   tft.initR(INITR_BLACKTAB); 
