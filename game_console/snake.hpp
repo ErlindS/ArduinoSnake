@@ -238,7 +238,7 @@ void initSnake(){
 }
 
 
-//Dieser Codeabschnitt kann mithilfe des Abstrahierten Spielablaufs und der State Machine gut nachvollzogen werden. 
+//Dieser Codeabschnitt kann mithilfe des abstrahierten Spielablaufs und der State Machine gut nachvollzogen werden. 
 void SnakeGame(){
   unsigned long currentMillis = millis();
   //JOYUP, JOYDOWN, JOYRIGHT, JOYLEFT
