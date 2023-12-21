@@ -196,7 +196,7 @@ void isgamewon(){
   tft.setRotation(3);
   testdrawtext("YOU WON!", ST7735_WHITE, 38, 70);
   testdrawtext("CONGRATULATIONS", ST7735_WHITE, 38, 80);
-  while(true){delay(50000)}
+  while(true){delay(50000);}
   }
 }
 
