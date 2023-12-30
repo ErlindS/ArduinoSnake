@@ -263,12 +263,12 @@ void loopPong(){
   int p2_dir = 0;
 
   //determine player directions
-  if(p1_y > 750)        p1_dir = -1; //move down
-  else if(p1_y < 350)   p1_dir =  1; //move up
+  if(p1_y > 767)        p1_dir = -1; //move down
+  else if(p1_y < 255)   p1_dir =  1; //move up
   else                  p1_dir =  0;
 
-  if(p2_y > 750)        p2_dir = -1; //move down
-  else if(p2_y < 350)   p2_dir =  1; //move up
+  if(p2_y > 767)        p2_dir = -1; //move down
+  else if(p2_y < 255)   p2_dir =  1; //move up
   else                  p2_dir =  0;
 
   //recalculate speed
